@@ -30,6 +30,12 @@ export function useShoppingList() {
     }
   }, [listId]);
 
+  const [configVersion, setConfigVersion] = useState(0);
+
+  const reconnect = useCallback(() => {
+    setConfigVersion((v) => v + 1);
+  }, []);
+
   // Realtime subscription setup
   useEffect(() => {
     setLoading(true);
@@ -61,7 +67,8 @@ export function useShoppingList() {
     return () => {
       unsubscribe();
     };
-  }, [listId, reloadItems]);
+  }, [listId, reloadItems, configVersion]);
+
 
   // Check for 100% completion celebration
   useEffect(() => {
@@ -268,6 +275,8 @@ export function useShoppingList() {
     updateItem,
     deleteItem,
     clearPurchased,
-    reloadItems
+    reloadItems,
+    reconnect
   };
 }
+

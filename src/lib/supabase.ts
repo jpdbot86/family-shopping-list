@@ -5,6 +5,15 @@ const STORAGE_KEY_URL = 'family_shopping_supabase_url';
 const STORAGE_KEY_KEY = 'family_shopping_supabase_key';
 const STORAGE_KEY_LIST_ID = 'family_shopping_list_id';
 
+export function normalizeUrl(rawUrl: string): string {
+  let url = rawUrl.trim();
+  if (!url) return '';
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+  return url.replace(/\/+$/, '');
+}
+
 export function getStoredConfig(): SupabaseConfig {
   const envUrl = import.meta.env.VITE_SUPABASE_URL || '';
   const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -14,24 +23,29 @@ export function getStoredConfig(): SupabaseConfig {
   const localKey = localStorage.getItem(STORAGE_KEY_KEY) || '';
   const localListId = localStorage.getItem(STORAGE_KEY_LIST_ID) || '';
 
+  const finalUrl = normalizeUrl(localUrl || envUrl);
+
   return {
-    url: localUrl.trim() || envUrl.trim(),
-    anonKey: localKey.trim() || envKey.trim(),
-    listId: localListId.trim() || envListId.trim() || 'family-main'
+    url: finalUrl,
+    anonKey: (localKey || envKey).trim(),
+    listId: (localListId || envListId || 'family-main').trim()
   };
 }
 
 export function saveStoredConfig(config: Partial<SupabaseConfig>) {
   if (config.url !== undefined) {
-    if (config.url) localStorage.setItem(STORAGE_KEY_URL, config.url.trim());
+    const clean = normalizeUrl(config.url);
+    if (clean) localStorage.setItem(STORAGE_KEY_URL, clean);
     else localStorage.removeItem(STORAGE_KEY_URL);
   }
   if (config.anonKey !== undefined) {
-    if (config.anonKey) localStorage.setItem(STORAGE_KEY_KEY, config.anonKey.trim());
+    const cleanKey = config.anonKey.trim();
+    if (cleanKey) localStorage.setItem(STORAGE_KEY_KEY, cleanKey);
     else localStorage.removeItem(STORAGE_KEY_KEY);
   }
   if (config.listId !== undefined) {
-    if (config.listId) localStorage.setItem(STORAGE_KEY_LIST_ID, config.listId.trim());
+    const cleanList = config.listId.trim();
+    if (cleanList) localStorage.setItem(STORAGE_KEY_LIST_ID, cleanList);
     else localStorage.removeItem(STORAGE_KEY_LIST_ID);
   }
   cachedClient = null; // reset cached client
@@ -48,6 +62,7 @@ export function isSupabaseConfigured(): boolean {
     !cfg.anonKey.includes('your-anon-key')
   );
 }
+
 
 let cachedClient: SupabaseClient | null = null;
 let lastUrl = '';

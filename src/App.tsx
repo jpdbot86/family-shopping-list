@@ -35,7 +35,8 @@ export function App() {
     updateItem,
     deleteItem,
     clearPurchased,
-    reloadItems
+    reloadItems,
+    reconnect
   } = useShoppingList();
 
   // Modals state
@@ -142,6 +143,7 @@ export function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         onConfigChanged={() => {
+          reconnect();
           reloadItems();
         }}
       />
