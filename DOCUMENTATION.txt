@@ -1,0 +1,288 @@
+================================================================================
+FAMILY SHOPPING LIST (ΛΙΣΤΑ ΑΓΟΡΩΝ) - COMPREHENSIVE DOCUMENTATION
+================================================================================
+Application: Real-Time Collaborative Family Shopping List
+Frontend: React 19 + TypeScript + Vite + Tailwind CSS + Lucide Icons
+Cross-Platform: Progressive Web App (PWA) + Capacitor 8 Android & iOS Ready
+Backend: Supabase (PostgreSQL with Realtime Subscriptions & Row-Level Security)
+Repository Root: ./family-shopping-list
+
+--------------------------------------------------------------------------------
+TABLE OF CONTENTS
+--------------------------------------------------------------------------------
+1. ARCHITECTURE & OVERVIEW
+2. SUPABASE DATABASE SCHEMA SETUP
+3. ENVIRONMENT VARIABLES (.env) & CREDENTIAL RESOLUTION
+4. LOCAL RUN & DEVELOPMENT COMMANDS
+5. DEPLOYMENT TO VERCEL & CLOUDFLARE PAGES
+6. MOBILE STRATEGY (iOS SAFARI PWA & CAPACITOR ANDROID APK)
+7. GIT VERSION CONTROL & ROLLBACK TIPS
+8. TROUBLESHOOTING & COMMON SCENARIOS
+
+================================================================================
+1. ARCHITECTURE & OVERVIEW
+================================================================================
+The Family Shopping List application is engineered for multi-user family use,
+allowing all family members to see additions, edits, quantity changes, and
+checked-off items instantaneously without manual page refreshes.
+
+Core Architectural Highlights:
+- Real-time Synchronized List: Backed by Supabase postgres_changes channels.
+  When someone at home adds "Γάλα" or "Ψωμί", the family member at the grocery
+  store sees it immediately on their phone.
+- Multi-user Ownership: Tracks which family member checked off an item
+  (e.g., "Αγοράστηκε από Μαρία"). User profile names and avatar colors are
+  stored locally in localStorage and attached to Supabase mutations.
+- Mobile-First Interface: Built with thumb-friendly controls, touch targets
+  exceeding 44px, safe-area padding for notch/dynamic island displays,
+  responsive category pill filters, and Web Audio feedback.
+- Offline & Local Storage Graceful Fallback: If no Supabase connection is
+  configured or the device is offline, the app operates in Local Demo mode
+  with local persistence and cross-tab event synchronization.
+- Dual Mobile Delivery:
+  a) PWA: Installable directly from Safari (iOS) and Chrome (Android).
+  b) Native Android APK: Pre-configured Capacitor native project ready to
+     compile via Gradle or Android Studio.
+
+================================================================================
+2. SUPABASE DATABASE SCHEMA SETUP
+================================================================================
+The database migration script is provided in the project root file:
+`supabase_schema.sql`
+
+Steps to set up your free Supabase database:
+1. Create a free account at https://supabase.com.
+2. Click "New Project", give it a name (e.g., "family-shopping-list"), and choose
+   a database region close to your family (e.g., Frankfurt / eu-central-1).
+3. Once the database is provisioned, go to the "SQL Editor" tab on the left sidebar.
+4. Click "New Query", paste the entire contents of `supabase_schema.sql`, and
+   click "Run" (or Ctrl+Enter).
+
+What the SQL Script Configures:
+- Table `public.shopping_items`:
+  * id (UUID PRIMARY KEY DEFAULT gen_random_uuid())
+  * name (TEXT NOT NULL) - Item description (e.g. "Φρέσκο Γάλα 3.5%")
+  * category (TEXT NOT NULL DEFAULT 'Other') - Grocery category
+  * quantity (TEXT NOT NULL DEFAULT '1') - Amount (e.g. "2 lt", "1 kg")
+  * unit (TEXT DEFAULT '') - Optional unit of measure
+  * notes (TEXT DEFAULT '') - Notes/brand preferences
+  * is_purchased (BOOLEAN NOT NULL DEFAULT FALSE) - Purchase status
+  * purchased_by (TEXT) - Name of family member who checked it off
+  * list_id (TEXT NOT NULL DEFAULT 'family-main') - Allows multi-list separation
+  * created_at (TIMESTAMPTZ DEFAULT now())
+  * updated_at (TIMESTAMPTZ DEFAULT now())
+- Automatic Trigger `handle_updated_at`: Updates `updated_at` on every edit.
+- Performance Indexes:
+  * idx_shopping_items_list_id
+  * idx_shopping_items_is_purchased
+  * idx_shopping_items_category
+  * idx_shopping_items_created_at
+- Row Level Security (RLS):
+  Enabled on `public.shopping_items` with open policies for `anon` and
+  `authenticated` roles, permitting read, insert, update, and delete via the
+  Supabase public anon key.
+- Realtime Publication:
+  Executes `ALTER PUBLICATION supabase_realtime ADD TABLE public.shopping_items;`
+  This enables WebSocket events to stream automatically to all connected devices.
+- Starter Seed Data: Inserts initial sample family items if the table is empty.
+
+================================================================================
+3. ENVIRONMENT VARIABLES (.env) & CREDENTIAL RESOLUTION
+================================================================================
+A template file `.env.example` is located in the project root:
+
+```env
+# Your Supabase Project URL (from Supabase Dashboard -> Project Settings -> API)
+VITE_SUPABASE_URL=https://your-project-id.supabase.co
+
+# Your Supabase Public Anon Key (from Project Settings -> API)
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Optional: Default List ID (defaults to 'family-main')
+VITE_DEFAULT_LIST_ID=family-main
+```
+
+Credential Resolution Priority:
+1. In-App Settings Modal:
+   Users can tap the gear icon (Settings) in the top right of the application
+   and paste their Supabase URL, Anon Key, and List ID. These values are saved
+   to browser/device localStorage and take top priority. This allows quick
+   testing on mobile devices without rebuilding the app.
+2. Build-Time / Environment Variables:
+   If no localStorage override exists, the app uses `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY` from `.env`.
+3. Offline / Demo Mode:
+   If no credentials are supplied, the app runs in Local Demo mode with
+   browser localStorage persistence and cross-tab synchronization.
+
+================================================================================
+4. LOCAL RUN & DEVELOPMENT COMMANDS
+================================================================================
+All commands should be executed from the `family-shopping-list` directory:
+
+1. Install Dependencies:
+   npm install
+
+2. Start Development Server:
+   npm run dev
+   - Starts Vite local server (usually http://localhost:5173).
+   - Hot Module Replacement (HMR) is active for instant UI updates.
+
+3. Build Production Bundle:
+   npm run build
+   - Compiles TypeScript (`tsc -b`) and bundles assets via Vite.
+   - Generates PWA manifest, service worker (`dist/sw.js`), and precache.
+   - Output directory: `dist/`
+
+4. Preview Production Build Locally:
+   npm run preview
+   - Serves the generated `dist/` folder over a local HTTP server.
+
+================================================================================
+5. DEPLOYMENT TO VERCEL & CLOUDFLARE PAGES
+================================================================================
+
+Deploying to Vercel (Recommended for instant setup):
+1. Push your repository to GitHub or GitLab.
+2. Log in to Vercel (https://vercel.com) and click "Add New... -> Project".
+3. Select your repository.
+4. Framework Preset: "Vite".
+5. Root Directory: `family-shopping-list` (if within a monorepo) or `./`.
+6. Build Command: `npm run build`
+7. Output Directory: `dist`
+8. Under "Environment Variables", add:
+   - `VITE_SUPABASE_URL` = your Supabase Project URL
+   - `VITE_SUPABASE_ANON_KEY` = your Supabase Anon Key
+   - `VITE_DEFAULT_LIST_ID` = `family-main`
+9. Click "Deploy".
+10. Once deployed, Vercel gives you an HTTPS URL (e.g., https://family-list.vercel.app)
+    which supports full PWA installation on iOS and Android.
+
+Deploying to Cloudflare Pages:
+1. Log in to Cloudflare Dashboard -> Workers & Pages -> Create Application -> Pages.
+2. Connect your Git repository.
+3. Build Settings:
+   - Framework preset: Vite
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+   - Root directory: `family-shopping-list` (or leave blank if at root)
+4. Environment Variables:
+   Add `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, and `VITE_DEFAULT_LIST_ID`.
+5. Click "Save and Deploy".
+
+================================================================================
+6. MOBILE STRATEGY (iOS SAFARI PWA & CAPACITOR ANDROID APK)
+================================================================================
+
+A. iOS Safari "Add to Home Screen" Experience:
+1. Open the deployed HTTPS URL in Safari on your iPhone or iPad.
+2. Tap the "Share" button (square icon with an upward arrow) at the bottom toolbar.
+3. Scroll down and tap "Add to Home Screen" (Προσθήκη στην οθόνη αφετηρίας).
+4. Tap "Add" in the top right corner.
+5. The app icon will appear on your iOS home screen.
+6. When launched from the home screen:
+   - The app opens full-screen in standalone display without browser URL bars.
+   - Notch and home indicator safe-areas are preserved via viewport-fit=cover
+     and `.pt-safe` / `.pb-safe` CSS padding.
+   - Offline caching ensures the app shell loads even in basement grocery aisles.
+
+B. Capacitor Android APK Generation:
+The project contains a pre-configured native Android platform inside `./android`.
+
+Prerequisites for building the APK:
+- Android Studio (Electric Eel or newer) OR Android SDK command-line tools.
+- Java Development Kit (JDK 17 or JDK 21).
+
+Method 1: Build APK via Command Line (Gradle)
+1. Build and sync the latest web assets:
+   npm run cap:sync
+   (This executes `npm run build` followed by `npx cap sync android`).
+2. Navigate into the Android folder and build the debug APK:
+   On Windows PowerShell:
+     cd android
+     .\gradlew.bat assembleDebug
+   On macOS / Linux:
+     cd android
+     ./gradlew assembleDebug
+3. Your generated APK file will be located at:
+   `android/app/build/outputs/apk/debug/app-debug.apk`
+4. You can transfer this APK directly to any Android smartphone and install it!
+
+Method 2: Build APK via Android Studio
+1. Open the project in Android Studio:
+   npm run cap:open
+   (or launch Android Studio and select the `family-shopping-list/android` directory).
+2. Wait for Gradle sync to complete.
+3. From the top menu, select: "Build" -> "Build Bundle(s) / APK(s)" -> "Build APK(s)".
+4. When finished, click the "locate" link in the pop-up notification to open the
+   folder containing `app-debug.apk`.
+
+================================================================================
+7. GIT VERSION CONTROL & ROLLBACK TIPS
+================================================================================
+
+Common Branching Workflow:
+1. Check current branch and status:
+   git status
+   git branch
+
+2. Create a new feature branch:
+   git checkout -b feature/recipe-import
+   (Develop changes, test them, then commit).
+
+3. Merge back to master:
+   git checkout master
+   git merge feature/recipe-import
+
+Inspection & History:
+- View recent commit history in one line:
+  git log --oneline -n 10
+- View changed files in the last commit:
+  git show --stat
+
+Safe Rollback & Recovery Tips:
+1. Discard uncommitted changes in your working directory:
+   git restore .
+2. Unstage files from git add without losing edits:
+   git restore --staged <file-name>
+3. Undo the most recent commit while keeping all your edits in working files:
+   git reset --soft HEAD~1
+4. Revert a specific commit safely by creating a reverse commit (ideal for teams):
+   git revert <commit-hash>
+5. Temporarily stash uncommitted changes:
+   git stash
+   git stash pop
+
+================================================================================
+8. TROUBLESHOOTING & COMMON SCENARIOS
+================================================================================
+
+Q1: Why do items not update in real-time between devices?
+Answer:
+1. Ensure you ran the real-time publication command in Supabase SQL editor:
+   ALTER PUBLICATION supabase_realtime ADD TABLE public.shopping_items;
+2. Verify that both devices use the exact same List ID in Settings (default: 'family-main').
+3. Verify that your Supabase Project is not paused (free tier projects pause after
+   inactivity and can be unpaused from the Supabase dashboard).
+
+Q2: How do family members set their name?
+Answer:
+Tap the avatar badge in the top right header (e.g., "Μαμά", "Γιάννης"). A modal
+opens allowing anyone to pick a preset name or type their own custom name and
+avatar color. Whenever they check off an item, their name appears next to the item.
+
+Q3: How do I export or share the list with someone not on the app?
+Answer:
+Tap the Share icon in the header. The app formats all pending grocery items
+organized by supermarket aisle / category with quantities and notes. Tap
+"Αντιγραφή Κειμένου" or "Αποστολή (Share)" to send directly to WhatsApp or Viber.
+
+Q4: Can I run multiple distinct shopping lists?
+Answer:
+Yes! Open Settings (gear icon) and change the "List ID" (e.g., "cottage-weekend",
+"birthday-party"). All items and real-time events are partitioned by `list_id`.
+
+================================================================================
+Created with React, Supabase, Tailwind CSS, Lucide, and Capacitor.
+Happy Grocery Shopping!
+================================================================================
