@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import type { ShoppingItem } from '../types';
 import { CATEGORY_MAP } from '../constants/categories';
-
+import { getProductEmoji } from '../utils/productEmoji';
 
 interface ItemCardProps {
   item: ShoppingItem;
@@ -47,6 +47,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
   const categoryDef = CATEGORY_MAP[item.category] || CATEGORY_MAP['Other'];
   const IconComponent = CategoryIconMap[categoryDef.iconName] || Tag;
+  const emoji = getProductEmoji(item.name, item.category);
 
   return (
     <div
@@ -69,6 +70,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({
       >
         {item.is_purchased && <Check className="w-4 h-4 stroke-[3]" />}
       </button>
+
+      {/* Product Emoji Icon Badge */}
+      <div
+        onClick={() => onToggle(item.id, item.is_purchased)}
+        className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 transition-all select-none cursor-pointer ${
+          item.is_purchased
+            ? 'bg-slate-100 dark:bg-slate-800/60 grayscale opacity-50 scale-95'
+            : 'bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-100/80 dark:border-emerald-900/60 shadow-xs hover:scale-105 active:scale-95'
+        }`}
+        title={item.name}
+      >
+        <span>{emoji}</span>
+      </div>
 
       {/* Main content body */}
       <div

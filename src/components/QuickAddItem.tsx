@@ -2,8 +2,7 @@ import { useState, useRef } from 'react';
 import { Plus, ChevronDown, Sparkles } from 'lucide-react';
 import type { ItemCategory } from '../types';
 import { CATEGORIES, COMMON_SUGGESTIONS } from '../constants/categories';
-
-
+import { getProductEmoji } from '../utils/productEmoji';
 
 interface QuickAddItemProps {
   onAdd: (data: {
@@ -25,6 +24,7 @@ export const QuickAddItem: React.FC<QuickAddItemProps> = ({ onAdd }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const previewEmoji = getProductEmoji(name, category);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -41,7 +41,6 @@ export const QuickAddItem: React.FC<QuickAddItemProps> = ({ onAdd }) => {
       setName('');
       setNotes('');
       setShowNotes(false);
-      // Keep selected category or reset if preferred
       if (inputRef.current) {
         inputRef.current.focus();
       }
@@ -68,15 +67,18 @@ export const QuickAddItem: React.FC<QuickAddItemProps> = ({ onAdd }) => {
     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-3.5 transition-all">
       <form onSubmit={handleSubmit} className="space-y-2.5">
         <div className="flex items-center gap-2">
-          {/* Main item name input */}
-          <div className="relative flex-1">
+          {/* Main item name input with live emoji icon */}
+          <div className="relative flex-1 flex items-center bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 transition-colors">
+            <span className="text-xl pl-3 pr-1 select-none shrink-0" aria-hidden="true">
+              {previewEmoji}
+            </span>
             <input
               ref={inputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Προσθήκη προϊόντος (π.χ. Γάλα, Ψωμί)..."
-              className="w-full text-sm sm:text-base px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+              className="w-full text-sm sm:text-base py-2.5 pr-3.5 bg-transparent border-0 focus:outline-none"
             />
           </div>
 
@@ -168,21 +170,25 @@ export const QuickAddItem: React.FC<QuickAddItemProps> = ({ onAdd }) => {
             </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {COMMON_SUGGESTIONS.map((item, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => handleSuggestionClick(item)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 text-xs transition-colors border border-transparent hover:border-emerald-300"
-              >
-                <span>+</span>
-                <span>{item.name}</span>
-                <span className="text-[10px] text-slate-400 font-normal">({item.defaultQty})</span>
-              </button>
-            ))}
+            {COMMON_SUGGESTIONS.map((item, idx) => {
+              const sugEmoji = getProductEmoji(item.name, item.category);
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSuggestionClick(item)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 hover:bg-emerald-100 dark:bg-slate-800 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-slate-700 dark:text-slate-300 text-xs transition-colors border border-transparent hover:border-emerald-300"
+                >
+                  <span className="text-sm">{sugEmoji}</span>
+                  <span>{item.name}</span>
+                  <span className="text-[10px] text-slate-400 font-normal">({item.defaultQty})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
     </div>
   );
 };
+

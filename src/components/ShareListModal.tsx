@@ -3,6 +3,7 @@ import { X, Copy, Check, Share2, MessageCircle } from 'lucide-react';
 import type { ShoppingItem } from '../types';
 
 import { CATEGORY_MAP } from '../constants/categories';
+import { getProductEmoji } from '../utils/productEmoji';
 
 interface ShareListModalProps {
   isOpen: boolean;
@@ -36,7 +37,8 @@ export const ShareListModal: React.FC<ShareListModalProps> = ({
     for (const [catName, catItems] of Object.entries(grouped)) {
       shareText += `📌 *${catName}*:\n`;
       catItems.forEach((it) => {
-        shareText += `• ${it.name}`;
+        const itemEmoji = getProductEmoji(it.name, it.category);
+        shareText += `• ${itemEmoji} ${it.name}`;
         if (it.quantity) shareText += ` (${it.quantity})`;
         if (it.notes) shareText += ` - _${it.notes}_`;
         shareText += '\n';
@@ -44,6 +46,7 @@ export const ShareListModal: React.FC<ShareListModalProps> = ({
       shareText += '\n';
     }
   }
+
 
   const handleCopy = async () => {
     try {
