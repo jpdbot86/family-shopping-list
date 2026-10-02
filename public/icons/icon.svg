@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.2"/>
+    </filter>
+  </defs>
+
+  <!-- Rounded App Icon Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Shopping Bag / Cart Emblem -->
+  <g filter="url(#shadow)" transform="translate(64, 56)">
+    <!-- Cart / Bag Outline -->
+    <path d="M 64 120 L 320 120 L 290 320 L 94 320 Z" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="26" 
+          stroke-linejoin="round" 
+          stroke-linecap="round"/>
+    
+    <!-- Bag Handle -->
+    <path d="M 132 120 C 132 50, 252 50, 252 120" 
+          fill="none" 
+          stroke="#ffffff" 
+          stroke-width="24" 
+          stroke-linecap="round"/>
+
+    <!-- Checkmark Badge on Bag -->
+    <circle cx="270" cy="280" r="58" fill="#ffffff" />
+    <path d="M 248 280 L 264 296 L 294 266" 
+          fill="none" 
+          stroke="#16a34a" 
+          stroke-width="14" 
+          stroke-linecap="round" 
+          stroke-linejoin="round" />
+          
+    <!-- Decorative list lines on bag -->
+    <line x1="120" y1="180" x2="220" y2="180" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.85" />
+    <line x1="120" y1="230" x2="200" y2="230" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.85" />
+  </g>
+</svg>
